@@ -5,52 +5,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audit de Prévention des Incendies</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        #auditResult {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+    </style>
 </head>
 <body>
     <h1>Audit de Prévention des Incendies</h1>
-    <form id="auditForm">
-        <label for="buildingName">Nom du bâtiment :</label>
-        <input type="text" id="buildingName" name="buildingName" required><br><br>
+    <div style="display: flex; gap: 20px;">
+        <!-- Formulaire -->
+        <form id="auditForm" style="flex: 1;">
+            <label for="buildingName">Nom du bâtiment :</label>
+            <input type="text" id="buildingName" name="buildingName" required><br><br>
 
-        <label for="fireExtinguishers">Nombre d'extincteurs :</label>
-        <input type="number" id="fireExtinguishers" name="fireExtinguishers" required><br><br>
+            <label for="fireExtinguishers">Nombre d'extincteurs :</label>
+            <input type="number" id="fireExtinguishers" name="fireExtinguishers" required><br><br>
 
-        <label for="emergencyExits">Nombre de sorties de secours :</label>
-        <input type="number" id="emergencyExits" name="emergencyExits" required><br><br>
+            <label for="emergencyExits">Nombre de sorties de secours :</label>
+            <input type="number" id="emergencyExits" name="emergencyExits" required><br><br>
 
-        <label for="smokeDetectors">Nombre de détecteurs de fumée :</label>
-        <input type="number" id="smokeDetectors" name="smokeDetectors" required><br><br>
+            <label for="smokeDetectors">Nombre de détecteurs de fumée :</label>
+            <input type="number" id="smokeDetectors" name="smokeDetectors" required><br><br>
 
-        <label for="buildingSize">Taille du bâtiment (en m²) :</label>
-        <input type="number" id="buildingSize" name="buildingSize" required><br><br>
+            <label for="buildingSize">Taille du bâtiment (en m²) :</label>
+            <input type="number" id="buildingSize" name="buildingSize" required><br><br>
 
-        <label for="buildingType">Type de bâtiment :</label>
-        <select id="buildingType" name="buildingType" required>
-            <option value="immeuble">Immeuble</option>
-            <option value="maison">Maison</option>
-            <option value="entrepot">Entrepôt</option>
-            <option value="usine">Usine</option>
-            <option value="etablissement_public">Établissement recevant du public</option>
-        </select><br><br>
+            <label for="buildingType">Type de bâtiment :</label>
+            <select id="buildingType" name="buildingType" required>
+                <option value="immeuble">Immeuble</option>
+                <option value="maison">Maison</option>
+                <option value="entrepot">Entrepôt</option>
+                <option value="usine">Usine</option>
+                <option value="etablissement_public">Établissement recevant du public</option>
+            </select><br><br>
 
-        <label for="buildingUsage">Usage du bâtiment :</label>
-        <select id="buildingUsage" name="buildingUsage" required>
-            <option value="professionnel">Professionnel</option>
-            <option value="personnel">Personnel</option>
-        </select><br><br>
+            <label for="buildingUsage">Usage du bâtiment :</label>
+            <select id="buildingUsage" name="buildingUsage" required>
+                <option value="professionnel">Professionnel</option>
+                <option value="personnel">Personnel</option>
+            </select><br><br>
 
-        <label for="roomCount">Nombre de pièces dans le bâtiment :</label>
-        <input type="number" id="roomCount" name="roomCount" required><br><br>
+            <label for="roomCount">Nombre de pièces dans le bâtiment :</label>
+            <input type="number" id="roomCount" name="roomCount" required><br><br>
 
-        <label for="roomSizes">Taille de chaque pièce (en m², séparées par des virgules) :</label>
-        <input type="text" id="roomSizes" name="roomSizes" placeholder="Exemple : 20, 15, 30" required><br><br>
+            <label for="roomSizes">Taille de chaque pièce (en m², séparées par des virgules) :</label>
+            <input type="text" id="roomSizes" name="roomSizes" placeholder="Exemple : 20, 15, 30" required><br><br>
 
-        <button type="submit">Soumettre l'Audit</button>
-    </form>
+            <button type="button" onclick="submitAudit()">Soumettre l'Audit</button>
+        </form>
+
+        <!-- Compte rendu -->
+        <div id="auditResult" style="flex: 1; display: none;">
+            <h2>Compte Rendu de l'Audit</h2>
+            <p id="auditMessage"></p>
+        </div>
+    </div>
 
     <!-- Bouton Retour -->
     <div style="margin-top: 20px;">
         <button onclick="window.location.href='/'">Retour à la page d'accueil</button>
     </div>
+
+    <script>
+        function submitAudit() {
+            // Récupérer les données du formulaire
+            const buildingName = document.getElementById("buildingName").value;
+            const fireExtinguishers = document.getElementById("fireExtinguishers").value;
+            const emergencyExits = document.getElementById("emergencyExits").value;
+            const smokeDetectors = document.getElementById("smokeDetectors").value;
+            const buildingSize = document.getElementById("buildingSize").value;
+            const buildingType = document.getElementById("buildingType").value;
+            const buildingUsage = document.getElementById("buildingUsage").value;
+            const roomCount = document.getElementById("roomCount").value;
+            const roomSizes = document.getElementById("roomSizes").value;
+
+            // Générer le message du compte rendu
+            const auditMessage = `
+                <strong>Nom du bâtiment :</strong> ${buildingName}<br>
+                <strong>Nombre d'extincteurs :</strong> ${fireExtinguishers}<br>
+                <strong>Nombre de sorties de secours :</strong> ${emergencyExits}<br>
+                <strong>Nombre de détecteurs de fumée :</strong> ${smokeDetectors}<br>
+                <strong>Taille du bâtiment :</strong> ${buildingSize} m²<br>
+                <strong>Type de bâtiment :</strong> ${buildingType}<br>
+                <strong>Usage du bâtiment :</strong> ${buildingUsage}<br>
+                <strong>Nombre de pièces :</strong> ${roomCount}<br>
+                <strong>Tailles des pièces :</strong> ${roomSizes}<br><br>
+                <strong>Message :</strong> L'audit a été réalisé avec succès. Veuillez vérifier les mesures de sécurité incendie pour garantir la conformité.
+            `;
+
+            // Afficher le compte rendu
+            document.getElementById("auditMessage").innerHTML = auditMessage;
+            document.getElementById("auditResult").style.display = "block";
+        }
+    </script>
 </body>
 </html>
