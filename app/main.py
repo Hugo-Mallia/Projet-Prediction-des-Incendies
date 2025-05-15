@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.routes.scan_environment import router as scan_router
@@ -16,3 +16,17 @@ app.include_router(scan_router, prefix="/api")
 @app.get("/")
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/audit")
+async def audit_page(request: Request):
+    return templates.TemplateResponse("audit.html", {"request": request})
+
+@app.post("/submit-audit")
+async def submit_audit(
+    buildingName: str = Form(...),
+    fireExtinguishers: int = Form(...),
+    emergencyExits: int = Form(...),
+    smokeDetectors: int = Form(...)
+):
+    # Logique pour traiter les données de l'audit
+    return {"message": "Audit soumis avec succès"}
