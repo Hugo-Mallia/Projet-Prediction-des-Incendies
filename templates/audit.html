@@ -74,14 +74,24 @@
         function submitAudit() {
             // Récupérer les données du formulaire
             const buildingName = document.getElementById("buildingName").value;
-            const fireExtinguishers = document.getElementById("fireExtinguishers").value;
-            const emergencyExits = document.getElementById("emergencyExits").value;
-            const smokeDetectors = document.getElementById("smokeDetectors").value;
-            const buildingSize = document.getElementById("buildingSize").value;
-            const buildingType = document.getElementById("buildingType").value;
-            const buildingUsage = document.getElementById("buildingUsage").value;
-            const roomCount = document.getElementById("roomCount").value;
-            const roomSizes = document.getElementById("roomSizes").value;
+            const fireExtinguishers = parseInt(document.getElementById("fireExtinguishers").value);
+            const emergencyExits = parseInt(document.getElementById("emergencyExits").value);
+            const smokeDetectors = parseInt(document.getElementById("smokeDetectors").value);
+            const buildingSize = parseInt(document.getElementById("buildingSize").value);
+            const roomCount = parseInt(document.getElementById("roomCount").value);
+            const roomSizes = document.getElementById("roomSizes").value.split(',').map(size => parseFloat(size.trim()));
+
+            // Évaluation des normes européennes
+            let auditResult = "Conforme aux normes européennes.";
+            if (fireExtinguishers < Math.ceil(buildingSize / 200)) {
+                auditResult = "Non conforme : Nombre d'extincteurs insuffisant (1 extincteur requis pour 200 m²).";
+            } else if (emergencyExits < 2) {
+                auditResult = "Non conforme : Nombre de sorties de secours insuffisant (minimum 2 requises).";
+            } else if (smokeDetectors < roomCount) {
+                auditResult = "Non conforme : Nombre de détecteurs de fumée insuffisant (1 détecteur requis par pièce).";
+            } else if (roomSizes.some(size => size > 50)) {
+                auditResult = "Non conforme : Certaines pièces dépassent la taille maximale autorisée de 50 m².";
+            }
 
             // Générer le message du compte rendu
             const auditMessage = `
@@ -90,11 +100,9 @@
                 <strong>Nombre de sorties de secours :</strong> ${emergencyExits}<br>
                 <strong>Nombre de détecteurs de fumée :</strong> ${smokeDetectors}<br>
                 <strong>Taille du bâtiment :</strong> ${buildingSize} m²<br>
-                <strong>Type de bâtiment :</strong> ${buildingType}<br>
-                <strong>Usage du bâtiment :</strong> ${buildingUsage}<br>
                 <strong>Nombre de pièces :</strong> ${roomCount}<br>
-                <strong>Tailles des pièces :</strong> ${roomSizes}<br><br>
-                <strong>Message :</strong> L'audit a été réalisé avec succès. Veuillez vérifier les mesures de sécurité incendie pour garantir la conformité.
+                <strong>Tailles des pièces :</strong> ${roomSizes.join(', ')} m²<br><br>
+                <strong>Message :</strong> ${auditResult}
             `;
 
             // Afficher le compte rendu
