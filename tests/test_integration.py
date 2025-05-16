@@ -11,4 +11,4 @@ def test_get_existing_item():
 def test_get_non_existent_item():
     response = client.get("/api/items/999")
     assert response.status_code == 404
-    assert response.json() == {"detail": "Item not found"}
+    assert response.json() == {"detail": "Item not found"}  # Correspond au message réel

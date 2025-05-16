@@ -60,7 +60,7 @@
 
         <!-- Compte rendu -->
         <div id="auditResult" style="flex: 1; display: none;">
-            <h2>Compte Rendu de l'Audit</h2>
+            <h2>Compte Rendu de votre Audit</h2>
             <p id="auditMessage"></p>
         </div>
     </div>
@@ -71,43 +71,52 @@
     </div>
 
     <script>
-        function submitAudit() {
-            // Récupérer les données du formulaire
-            const buildingName = document.getElementById("buildingName").value;
-            const fireExtinguishers = parseInt(document.getElementById("fireExtinguishers").value);
-            const emergencyExits = parseInt(document.getElementById("emergencyExits").value);
-            const smokeDetectors = parseInt(document.getElementById("smokeDetectors").value);
-            const buildingSize = parseInt(document.getElementById("buildingSize").value);
-            const roomCount = parseInt(document.getElementById("roomCount").value);
-            const roomSizes = document.getElementById("roomSizes").value.split(',').map(size => parseFloat(size.trim()));
+        async function submitAudit() {
+            const formData = new FormData(document.getElementById("auditForm"));
 
-            // Évaluation des normes européennes
-            let auditResult = "Conforme aux normes européennes.";
-            if (fireExtinguishers < Math.ceil(buildingSize / 200)) {
-                auditResult = "Non conforme : Nombre d'extincteurs insuffisant (1 extincteur requis pour 200 m²).";
-            } else if (emergencyExits < 2) {
-                auditResult = "Non conforme : Nombre de sorties de secours insuffisant (minimum 2 requises).";
-            } else if (smokeDetectors < roomCount) {
-                auditResult = "Non conforme : Nombre de détecteurs de fumée insuffisant (1 détecteur requis par pièce).";
-            } else if (roomSizes.some(size => size > 50)) {
-                auditResult = "Non conforme : Certaines pièces dépassent la taille maximale autorisée de 50 m².";
+            try {
+                const response = await fetch("/api/submit-audit", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                // Générer les recommandations
+                let recommendations = "";
+                if (result.status === "Non conforme") {
+                    recommendations = `
+                        <h3>Recommandations :</h3>
+                        <ul>
+                            <li>Vérifiez le nombre d'extincteurs et ajoutez-en si nécessaire.</li>
+                            <li>Assurez-vous d'avoir au moins deux sorties de secours accessibles.</li>
+                            <li>Installez des détecteurs de fumée dans toutes les pièces.</li>
+                            <li>Réduisez la taille des pièces dépassant 50 m² ou divisez-les.</li>
+                        </ul>
+                    `;
+                }
+
+                // Afficher le compte rendu
+                const auditMessage = `
+                    <strong>Status :</strong> ${result.status}<br>
+                    <strong>Message :</strong> ${result.message}<br><br>
+                    <strong>Résumé des informations saisies :</strong><br>
+                    <strong>Nom du bâtiment :</strong> ${result.data.buildingName}<br>
+                    <strong>Nombre d'extincteurs :</strong> ${result.data.fireExtinguishers}<br>
+                    <strong>Nombre de sorties de secours :</strong> ${result.data.emergencyExits}<br>
+                    <strong>Nombre de détecteurs de fumée :</strong> ${result.data.smokeDetectors}<br>
+                    <strong>Taille du bâtiment :</strong> ${result.data.buildingSize} m²<br>
+                    <strong>Nombre de pièces :</strong> ${result.data.roomCount}<br>
+                    <strong>Tailles des pièces :</strong> ${result.data.roomSizes.join(", ")} m²<br>
+                    <strong>Données des capeurs :</strong> <br>    - Température : ${result.data.automatedData.temperature}°C, <br>    - Niveau de fumée : ${result.data.automatedData.smoke_level}, <br>    - Statut des extincteurs : ${result.data.automatedData.fire_extinguisher_status}<br>
+                    ${recommendations}
+                `;
+                document.getElementById("auditMessage").innerHTML = auditMessage;
+                document.getElementById("auditResult").style.display = "block";
+            } catch (error) {
+                console.error("Erreur lors de l'envoi de l'audit :", error);
+                alert("Une erreur est survenue lors de l'envoi de l'audit.");
             }
-
-            // Générer le message du compte rendu
-            const auditMessage = `
-                <strong>Nom du bâtiment :</strong> ${buildingName}<br>
-                <strong>Nombre d'extincteurs :</strong> ${fireExtinguishers}<br>
-                <strong>Nombre de sorties de secours :</strong> ${emergencyExits}<br>
-                <strong>Nombre de détecteurs de fumée :</strong> ${smokeDetectors}<br>
-                <strong>Taille du bâtiment :</strong> ${buildingSize} m²<br>
-                <strong>Nombre de pièces :</strong> ${roomCount}<br>
-                <strong>Tailles des pièces :</strong> ${roomSizes.join(', ')} m²<br><br>
-                <strong>Message :</strong> ${auditResult}
-            `;
-
-            // Afficher le compte rendu
-            document.getElementById("auditMessage").innerHTML = auditMessage;
-            document.getElementById("auditResult").style.display = "block";
         }
     </script>
 </body>
