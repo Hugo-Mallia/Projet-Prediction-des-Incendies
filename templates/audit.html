@@ -19,20 +19,9 @@
     <div style="display: flex; gap: 20px;">
         <!-- Formulaire -->
         <form id="auditForm" style="flex: 1;">
+            <h2>Informations générales</h2>
             <label for="buildingName">Nom du bâtiment :</label>
             <input type="text" id="buildingName" name="buildingName" required><br><br>
-
-            <label for="fireExtinguishers">Nombre d'extincteurs :</label>
-            <input type="number" id="fireExtinguishers" name="fireExtinguishers" required><br><br>
-
-            <label for="emergencyExits">Nombre de sorties de secours :</label>
-            <input type="number" id="emergencyExits" name="emergencyExits" required><br><br>
-
-            <label for="smokeDetectors">Nombre de détecteurs de fumée :</label>
-            <input type="number" id="smokeDetectors" name="smokeDetectors" required><br><br>
-
-            <label for="buildingSize">Taille du bâtiment (en m²) :</label>
-            <input type="number" id="buildingSize" name="buildingSize" required><br><br>
 
             <label for="buildingType">Type de bâtiment :</label>
             <select id="buildingType" name="buildingType" required>
@@ -49,11 +38,44 @@
                 <option value="personnel">Personnel</option>
             </select><br><br>
 
+            <label for="buildingSize">Taille du bâtiment (en m²) :</label>
+            <input type="number" id="buildingSize" name="buildingSize" min="0" required><br><br>
+
+            <h2>Équipements de sécurité</h2>
+            <label for="fireExtinguishers">Nombre d'extincteurs :</label>
+            <input type="number" id="fireExtinguishers" name="fireExtinguishers" min="0" required><br><br>
+
+            <label for="emergencyExits">Nombre de sorties de secours :</label>
+            <input type="number" id="emergencyExits" name="emergencyExits" min="0" required><br><br>
+
+            <label for="smokeDetectors">Nombre de détecteurs de fumée :</label>
+            <input type="number" id="smokeDetectors" name="smokeDetectors" min="0" required><br><br>
+
+            <label for="fireDrills">Dernière date d'exercice d'évacuation :</label>
+            <input type="date" id="fireDrills" name="fireDrills" required><br><br>
+
+            <h2>Structure et conformité</h2>
             <label for="roomCount">Nombre de pièces dans le bâtiment :</label>
-            <input type="number" id="roomCount" name="roomCount" required><br><br>
+            <input type="number" id="roomCount" name="roomCount" min="1" required><br><br>
 
             <label for="roomSizes">Taille de chaque pièce (en m², séparées par des virgules) :</label>
             <input type="text" id="roomSizes" name="roomSizes" placeholder="Exemple : 20, 15, 30" required><br><br>
+
+            <label for="constructionMaterials">Matériaux de construction principaux :</label>
+            <input type="text" id="constructionMaterials" name="constructionMaterials" placeholder="Exemple : béton, bois, acier" required><br><br>
+
+            <label for="evacuationPlan">Plan d'évacuation disponible :</label>
+            <select id="evacuationPlan" name="evacuationPlan" required>
+                <option value="oui">Oui</option>
+                <option value="non">Non</option>
+            </select><br><br>
+
+            <h2>Sensibilisation et formation</h2>
+            <label for="trainingSessions">Nombre de sessions de formation en sécurité incendie organisées cette année :</label>
+            <input type="number" id="trainingSessions" name="trainingSessions" min="0" required><br><br>
+
+            <label for="staffAwareness">Niveau de sensibilisation du personnel (1 à 5) :</label>
+            <input type="number" id="staffAwareness" name="staffAwareness" min="1" max="5" required><br><br>
 
             <button type="button" onclick="submitAudit()">Soumettre l'Audit</button>
         </form>
@@ -83,18 +105,11 @@
                 const result = await response.json();
 
                 // Générer les recommandations
-                let recommendations = "";
-                if (result.status === "Non conforme") {
-                    recommendations = `
-                        <h3>Recommandations :</h3>
-                        <ul>
-                            <li>Vérifiez le nombre d'extincteurs et ajoutez-en si nécessaire.</li>
-                            <li>Assurez-vous d'avoir au moins deux sorties de secours accessibles.</li>
-                            <li>Installez des détecteurs de fumée dans toutes les pièces.</li>
-                            <li>Réduisez la taille des pièces dépassant 50 m² ou divisez-les.</li>
-                        </ul>
-                    `;
-                }
+                let recommendations = "<h3>Recommandations :</h3><ul>";
+                result.recommendations.forEach(rec => {
+                    recommendations += `<li>${rec}</li>`;
+                });
+                recommendations += "</ul>";
 
                 // Afficher le compte rendu
                 const auditMessage = `
@@ -108,7 +123,6 @@
                     <strong>Taille du bâtiment :</strong> ${result.data.buildingSize} m²<br>
                     <strong>Nombre de pièces :</strong> ${result.data.roomCount}<br>
                     <strong>Tailles des pièces :</strong> ${result.data.roomSizes.join(", ")} m²<br>
-                    <strong>Données des capeurs :</strong> <br>    - Température : ${result.data.automatedData.temperature}°C, <br>    - Niveau de fumée : ${result.data.automatedData.smoke_level}, <br>    - Statut des extincteurs : ${result.data.automatedData.fire_extinguisher_status}<br>
                     ${recommendations}
                 `;
                 document.getElementById("auditMessage").innerHTML = auditMessage;
