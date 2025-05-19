@@ -3,6 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.routes.scan_environment import router as scan_router
 from app.routers.items import router as items_router
+from app.services.audit_service import evaluate_audit
+import gradio as gr
 
 app = FastAPI()
 
@@ -19,98 +21,71 @@ app.include_router(items_router, prefix="/api")
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/audit")
-async def audit_page(request: Request):
-    return templates.TemplateResponse("audit.html", {"request": request})
+def audit_chatbot():
+    questions = [
+        ("Bonjour, je suis Flaméo, votre auditeur sécurité incendie. Pour commencer, quel est le nom du bâtiment à auditer ?", "buildingName"),
+        ("Merci. Quel est le type de bâtiment (immeuble, maison, entrepôt, usine, établissement public) ?", "buildingType"),
+        ("Très bien. Quel est l'usage principal du bâtiment (professionnel ou personnel) ?", "buildingUsage"),
+        ("Pouvez-vous m’indiquer la taille du bâtiment en m² ?", "buildingSize"),
+        ("Combien d’extincteurs sont présents dans le bâtiment ?", "fireExtinguishers"),
+        ("Combien de sorties de secours sont disponibles ?", "emergencyExits"),
+        ("Combien de détecteurs de fumée sont installés ?", "smokeDetectors"),
+        ("Quelle est la date du dernier exercice d’évacuation (AAAA-MM-JJ) ?", "fireDrills"),
+        ("Combien de pièces compte le bâtiment ?", "roomCount"),
+        ("Merci. Quelle est la taille de chaque pièce (en m², séparées par des virgules) ?", "roomSizes"),
+        ("Quels sont les matériaux de construction principaux ?", "constructionMaterials"),
+        ("Un plan d’évacuation est-il disponible et affiché (oui/non) ?", "evacuationPlan"),
+        ("Combien de sessions de formation en sécurité incendie ont eu lieu cette année ?", "trainingSessions"),
+        ("Sur une échelle de 1 à 5, quel est le niveau de sensibilisation du personnel à la sécurité incendie ?", "staffAwareness"),
+    ]
+    state = {}
 
-@app.post("/api/submit-audit")
-async def submit_audit(
-    buildingName: str = Form(...),
-    buildingType: str = Form(...),
-    buildingUsage: str = Form(...),
-    buildingSize: int = Form(...),
-    fireExtinguishers: int = Form(...),
-    emergencyExits: int = Form(...),
-    smokeDetectors: int = Form(...),
-    fireDrills: str = Form(...),
-    roomCount: int = Form(...),
-    roomSizes: str = Form(...),
-    constructionMaterials: str = Form(...),
-    evacuationPlan: str = Form(...),
-    trainingSessions: int = Form(...),
-    staffAwareness: int = Form(...)
-):
-    # Convertir les tailles des pièces en liste de nombres
-    try:
-        room_sizes = [float(size.strip()) for size in roomSizes.split(",")]
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid room sizes format")
+    def chat_fn(message, history):
+        idx = len(history)
+        if idx < len(questions):
+            key = questions[idx-1][1] if idx > 0 else None
+            if key:
+                state[key] = message
+            if idx < len(questions):
+                # Ajoute une relance personnalisée
+                if idx == 1:
+                    return questions[idx][0] + " (N'hésitez pas à me donner des détails.)"
+                return questions[idx][0]
+        else:
+            key = questions[-1][1]
+            state[key] = message
+            # Conversion des types
+            try:
+                state["buildingSize"] = int(state["buildingSize"])
+                state["fireExtinguishers"] = int(state["fireExtinguishers"])
+                state["emergencyExits"] = int(state["emergencyExits"])
+                state["smokeDetectors"] = int(state["smokeDetectors"])
+                state["roomCount"] = int(state["roomCount"])
+                state["trainingSessions"] = int(state["trainingSessions"])
+                state["staffAwareness"] = int(state["staffAwareness"])
+            except Exception:
+                return "Je n'ai pas compris une des valeurs numériques, pouvez-vous vérifier votre saisie ?"
+            result = evaluate_audit(state)
+            # Réponse finale personnalisée
+            return (
+                "Merci pour toutes ces informations, je vais maintenant analyser la conformité de votre bâtiment.\n\n"
+                f"**Statut de l'audit** : {result.status}\n"
+                f"**Résumé** : {result.message}\n"
+                f"**Recommandations personnalisées** :\n- " + "\n- ".join(result.recommendations) +
+                "\n\nN'hésitez pas à me solliciter pour un nouvel audit ou pour toute question complémentaire."
+            )
+        return ""
 
-    # Simuler l'intégration de capteurs pour collecter des données supplémentaires
-    automated_data = {
-        "temperature": 25,  # Température ambiante en °C
-        "smoke_level": 0.02,  # Niveau de fumée détecté
-        "fire_extinguisher_status": "OK"  # Statut des extincteurs
-    }
+    with gr.Blocks() as demo:
+        gr.Markdown("## 👩‍🚒 Flaméo  - Votre auditeur virtuel\nDiscutez avec votre auditeur pour réaliser un audit sécurité incendie personnalisé.")
+        chatbot = gr.ChatInterface(chat_fn)
+        gr.Button("⬅️ Retour à l'accueil").click(
+            None,
+            None,
+            None,
+            js="window.location.href='/'"
+        )
+    return demo
 
-    # Évaluation des normes européennes
-    status = "Conforme"
-    message = "Le bâtiment respecte les normes européennes."
-    recommendations = []
-
-    if fireExtinguishers < (buildingSize // 200):
-        status = "Non conforme"
-        message = "Nombre d'extincteurs insuffisant (1 extincteur requis pour 200 m²)."
-        recommendations.append("Ajoutez des extincteurs pour atteindre le ratio requis (1 extincteur pour 200 m²).")
-
-    if emergencyExits < 2:
-        status = "Non conforme"
-        message = "Nombre de sorties de secours insuffisant (minimum 2 requises)."
-        recommendations.append("Ajoutez au moins deux sorties de secours accessibles et bien signalées.")
-
-    if smokeDetectors < roomCount:
-        status = "Non conforme"
-        message = "Nombre de détecteurs de fumée insuffisant (1 détecteur requis par pièce)."
-        recommendations.append("Installez des détecteurs de fumée dans toutes les pièces.")
-
-    if any(size > 50 for size in room_sizes):
-        status = "Non conforme"
-        message = "Certaines pièces dépassent la taille maximale autorisée de 50 m²."
-        recommendations.append("Divisez les pièces dépassant 50 m² en espaces plus petits.")
-
-    if evacuationPlan == "non":
-        recommendations.append("Créez et affichez un plan d'évacuation clair et accessible.")
-
-    if trainingSessions < 2:
-        recommendations.append("Organisez au moins deux sessions de formation en sécurité incendie par an.")
-
-    if staffAwareness < 3:
-        recommendations.append("Sensibilisez davantage le personnel aux pratiques de sécurité incendie.")
-
-    # Toujours inclure des recommandations générales
-    recommendations.append("Effectuez des exercices d'évacuation réguliers pour améliorer la préparation.")
-    recommendations.append("Vérifiez régulièrement l'état des équipements de sécurité.")
-
-    # Retourner les informations saisies, les recommandations et le résultat de l'audit
-    return {
-        "status": status,
-        "message": message,
-        "recommendations": recommendations,
-        "data": {
-            "buildingName": buildingName,
-            "buildingType": buildingType,
-            "buildingUsage": buildingUsage,
-            "buildingSize": buildingSize,
-            "fireExtinguishers": fireExtinguishers,
-            "emergencyExits": emergencyExits,
-            "smokeDetectors": smokeDetectors,
-            "fireDrills": fireDrills,
-            "roomCount": roomCount,
-            "roomSizes": room_sizes,
-            "constructionMaterials": constructionMaterials,
-            "evacuationPlan": evacuationPlan,
-            "trainingSessions": trainingSessions,
-            "staffAwareness": staffAwareness,
-            "automatedData": automated_data
-        }
-    }
+# Intégration Gradio sur /audit-bot
+app = gr.mount_gradio_app(app, audit_chatbot(), path="/audit-bot")

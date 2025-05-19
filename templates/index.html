@@ -7,18 +7,24 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Système de Prédiction des Incendies</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" id="imageUpload" accept="image/*" required>
-        <button type="submit">Scanner l'Environnement</button>
-    </form>
-
-    <!-- Bouton pour l'audit -->
-    <div style="text-align: center; margin-top: 20px;">
-        <button onclick="window.location.href='/audit'">Faire un Audit</button>
+    <div class="container">
+        <h1>🔥 Système de Prédiction des Incendies</h1>
+        <div class="subtitle">Protégez vos bâtiments grâce à l’IA et à l’audit virtuel</div>
+        <div class="actions">
+            <div>
+                <div class="desc">Scanner l’environnement à partir d’une image pour détecter les risques d’incendie.</div>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="file" id="imageUpload" accept="image/*" required>
+                    <button type="submit">Scanner l'Environnement</button>
+                </form>
+            </div>
+            <div>
+                <div class="desc">Discuter avec <b>Flaméo</b>, votre auditeur virtuel, pour réaliser un audit sécurité incendie personnalisé.</div>
+                <a href="/audit-bot"><button type="button">🚒 Lancer l'audit avec Flaméo</button></a>
+            </div>
+        </div>
+        <div id="results"></div>
     </div>
-    <div id="results"></div>
-
     <script src="/static/script.js"></script>
 </body>
 </html>
