@@ -4,27 +4,628 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Système de Prédiction des Incendies</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shine 3s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(200%) translateY(200%) rotate(45deg); }
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .action-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .action-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            color: #ff6b35;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .action-card:hover .card-icon {
+            transform: scale(1.1) rotate(10deg);
+            color: #f7931e;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .desc {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .upload-area.dragover {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.05);
+            transform: scale(1.02);
+        }
+
+        .upload-area:hover {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.02);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: #ccc;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: #ff6b35;
+            transform: scale(1.1);
+        }
+
+        .upload-text {
+            color: #888;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.5s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        }
+
+        #results {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .risk-item {
+            border-left: 4px solid #ff6b35;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .risk-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 768px) {
+            .actions {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .action-card {
+                padding: 25px;
+            }
+        }
+
+        /* Success notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
 </head>
 <body>
+    <div class="particles" id="particles"></div>
+    
     <div class="container">
-        <h1>🔥 Système de Prédiction des Incendies</h1>
-        <div class="subtitle">Protégez vos bâtiments grâce à l’IA et à l’audit virtuel</div>
-        <div class="actions">
-            <div>
-                <div class="desc">Scanner l’environnement à partir d’une image pour détecter les risques d’incendie.</div>
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <input type="file" id="imageUpload" accept="image/*" required>
-                    <button type="submit">Scanner l'Environnement</button>
-                </form>
-            </div>
-            <div>
-                <div class="desc">Discuter avec <b>Flaméo</b>, votre auditeur virtuel, pour réaliser un audit sécurité incendie personnalisé.</div>
-                <a href="/audit-bot"><button type="button">🚒 Lancer l'audit avec Flaméo</button></a>
-            </div>
+        <div class="header">
+            <h1><i class="fas fa-fire"></i> Système de Prédiction des Incendies</h1>
+            <div class="subtitle">Protégez vos bâtiments grâce à l'IA et à l'audit virtuel</div>
         </div>
-        <div id="results"></div>
+
+        <div class="content">
+            <div class="actions">
+                <div class="action-card">
+                    <div class="card-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div class="card-title">Scanner l'Environnement</div>
+                    <div class="desc">Téléchargez une image pour détecter automatiquement les risques d'incendie grâce à notre IA avancée.</div>
+                    
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">Glissez votre image ici ou cliquez pour parcourir</div>
+                            <div class="upload-subtext">Formats acceptés: JPG, PNG, WebP (max 10MB)</div>
+                            <input type="file" id="imageUpload" accept="image/*" required>
+                        </div>
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <button type="submit" class="btn" style="margin-top: 20px; width: 100%;">
+                            <i class="fas fa-search"></i>
+                            <span id="scanText">Analyser l'Image</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="action-card">
+                    <div class="card-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="card-title">Audit Personnalisé</div>
+                    <div class="desc">Discutez avec <strong>Flaméo</strong>, votre assistant IA spécialisé, pour un audit sécurité incendie complet et personnalisé.</div>
+                    
+                    <a href="/audit-bot" class="btn btn-secondary" style="width: 100%; justify-content: center; text-decoration: none;">
+                        <i class="fas fa-comments"></i>
+                        Lancer l'audit avec Flaméo
+                    </a>
+                </div>
+            </div>
+
+            <div id="results"></div>
+        </div>
     </div>
-    <script src="/static/script.js"></script>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Create animated particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = particle.style.height = Math.random() * 4 + 1 + 'px';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('imageUpload');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateUploadText(files[0].name);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                updateUploadText(e.target.files[0].name);
+            }
+        });
+
+        function updateUploadText(filename) {
+            const uploadText = document.querySelector('.upload-text');
+            uploadText.textContent = `Fichier sélectionné: ${filename}`;
+            uploadArea.style.borderColor = '#4CAF50';
+            uploadArea.style.background = 'rgba(76, 175, 80, 0.05)';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.background = type === 'success' ? '#4CAF50' : '#f44336';
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function showProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressBar.style.display = 'block';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+                progressFill.style.width = progress + '%';
+                
+                if (progress >= 90) {
+                    clearInterval(interval);
+                }
+            }, 200);
+            
+            return interval;
+        }
+
+        function hideProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                progressFill.style.width = '0%';
+            }, 500);
+        }
+
+        // Form submission with enhanced UX
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const scanText = document.getElementById('scanText');
+            const originalText = scanText.textContent;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Show loading state
+            scanText.innerHTML = '<span class="loading"></span>Analyse en cours...';
+            submitBtn.disabled = true;
+            
+            const progressInterval = showProgress();
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                hideProgress();
+                clearInterval(progressInterval);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    displayResults(result);
+                    showNotification('Analyse terminée avec succès !');
+                } else {
+                    throw new Error('Erreur lors de l\'analyse');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Erreur lors de l\'analyse. Veuillez réessayer.', 'error');
+            } finally {
+                // Reset button state
+                scanText.textContent = originalText;
+                submitBtn.disabled = false;
+                hideProgress();
+            }
+        });
+
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+            let html = '<h3 style="color: #ff6b35; margin-bottom: 20px;"><i class="fas fa-chart-line"></i> Résultats de l\'Analyse</h3>';
+            
+            if (result.risks && result.risks.length > 0) {
+                result.risks.forEach(risk => {
+                    html += `
+                        <div class="risk-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>${risk.type}</strong>
+                                    <p style="margin: 5px 0; color: #666;">${risk.description}</p>
+                                </div>
+                                <div style="background: ${getRiskColor(risk.severity)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">
+                                    ${risk.severity}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<div class="risk-item" style="border-left-color: #4CAF50;"><i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 10px;"></i>Aucun risque détecté dans cette image.</div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getRiskColor(severity) {
+            switch(severity.toLowerCase()) {
+                case 'élevé': case 'high': return '#f44336';
+                case 'moyen': case 'medium': return '#ff9800';
+                case 'faible': case 'low': return '#4CAF50';
+                default: return '#9e9e9e';
+            }
+        }
+
+        // Initialize particles on load
+        window.addEventListener('load', () => {
+            createParticles();
+        });
+
+        // Add some interactive elements
+        document.querySelectorAll('.action-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.background = 'linear-gradient(135deg, #ffffff, #f8f9fa)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.background = 'white';
+            });
+        });
+    </script>
 </body>
 </html>
