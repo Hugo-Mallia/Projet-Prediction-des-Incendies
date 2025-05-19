@@ -33,13 +33,136 @@
             </select><br><br>
 
             <label for="buildingUsage">Usage du bâtiment :</label>
-            <select id="buildingUsage" name="buildingUsage" required>
-                <option value="professionnel">Professionnel</option>
-                <option value="personnel">Personnel</option>
+            <select id="buildingUsage" name="buildingUsage" required onchange="toggleAuditSections()">
+                <option value="professionnel">Entreprise</option>
+                <option value="personnel">Habitation</option>
             </select><br><br>
 
             <label for="buildingSize">Taille du bâtiment (en m²) :</label>
             <input type="number" id="buildingSize" name="buildingSize" min="0" required><br><br>
+
+            <!-- Section Habitation -->
+            <div id="habitationSection" style="display:none;">
+                <h2>Évaluation des Risques</h2>
+                <label>Quels sont les risques d'incendie spécifiques à l'habitation ?</label>
+                <textarea name="homeSpecificRisks" rows="2"></textarea><br><br>
+                <label>Y a-t-il des sources potentielles d'incendie (cuisine, chauffage, installations électriques) ?</label>
+                <textarea name="homeFireSources" rows="2"></textarea><br><br>
+
+                <h2>Conformité et Réglementation</h2>
+                <label>L'habitation est-elle conforme aux normes de sécurité incendie en vigueur ?</label>
+                <select name="homeCompliance">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Les extincteurs et autres équipements de sécurité sont-ils présents et en bon état de fonctionnement ?</label>
+                <select name="homeEquipmentsOk">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Sensibilisation et Formation</h2>
+                <label>Les occupants sont-ils informés des procédures à suivre en cas d'incendie ?</label>
+                <select name="homeAwareness">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Des exercices d'évacuation sont-ils régulièrement organisés ?</label>
+                <select name="homeDrills">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Équipements de Sécurité</h2>
+                <label>Les détecteurs de fumée sont-ils installés et fonctionnels ?</label>
+                <select name="homeSmokeDetectors">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Y a-t-il des extincteurs accessibles et en nombre suffisant ?</label>
+                <select name="homeExtinguishersEnough">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Plans d'Évacuation</h2>
+                <label>Existe-t-il un plan d'évacuation clair et affiché ?</label>
+                <select name="homeEvacPlan">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Les issues de secours sont-elles dégagées et facilement accessibles ?</label>
+                <select name="homeExitsClear">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+            </div>
+
+            <!-- Section Entreprise -->
+            <div id="entrepriseSection" style="display:none;">
+                <h2>Évaluation des Risques</h2>
+                <label>Quels sont les risques d'incendie spécifiques à l'entreprise ?</label>
+                <textarea name="companySpecificRisks" rows="2"></textarea><br><br>
+                <label>Y a-t-il des zones à haut risque (stockage de produits inflammables, ateliers de production) ?</label>
+                <textarea name="companyHighRiskZones" rows="2"></textarea><br><br>
+
+                <h2>Conformité et Réglementation</h2>
+                <label>L'entreprise est-elle conforme aux normes de sécurité incendie en vigueur ?</label>
+                <select name="companyCompliance">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Les équipements de sécurité (extincteurs, alarmes, sprinklers) sont-ils conformes et en bon état de fonctionnement ?</label>
+                <select name="companyEquipmentsOk">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Sensibilisation et Formation</h2>
+                <label>Les employés sont-ils formés aux procédures de sécurité incendie ?</label>
+                <select name="companyTraining">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Des exercices d'évacuation sont-ils régulièrement organisés ?</label>
+                <select name="companyDrills">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Équipements de Sécurité</h2>
+                <label>Les détecteurs de fumée et les alarmes incendie sont-ils installés et fonctionnels ?</label>
+                <select name="companySmokeDetectors">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Y a-t-il des extincteurs accessibles et en nombre suffisant ?</label>
+                <select name="companyExtinguishersEnough">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Gestion des Risques</h2>
+                <label>Des audits de sécurité incendie sont-ils réalisés régulièrement ?</label>
+                <select name="companyRegularAudits">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+                <label>Les recommandations des audits précédents ont-elles été mises en œuvre ?</label>
+                <select name="companyAuditRecommendations">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+
+                <h2>Responsabilités et Procédures</h2>
+                <label>Qui est responsable de la sécurité incendie dans l'entreprise ?</label>
+                <input type="text" name="companyFireSafetyResponsible"><br><br>
+                <label>Existe-t-il des procédures claires pour signaler et gérer un incendie ?</label>
+                <select name="companyFireProcedures">
+                    <option value="oui">Oui</option>
+                    <option value="non">Non</option>
+                </select><br><br>
+            </div>
 
             <h2>Équipements de sécurité</h2>
             <label for="fireExtinguishers">Nombre d'extincteurs :</label>
@@ -132,6 +255,13 @@
                 alert("Une erreur est survenue lors de l'envoi de l'audit.");
             }
         }
+
+        function toggleAuditSections() {
+            const usage = document.getElementById('buildingUsage').value;
+            document.getElementById('habitationSection').style.display = usage === 'personnel' ? 'block' : 'none';
+            document.getElementById('entrepriseSection').style.display = usage === 'professionnel' ? 'block' : 'none';
+        }
+        window.onload = toggleAuditSections;
     </script>
 </body>
 </html>
