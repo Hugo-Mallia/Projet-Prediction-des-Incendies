@@ -336,178 +336,101 @@ class SmartAuditState:
                 pass
     
     def _validate_text_enhanced(self, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
-        """Validation simple pour les champs texte"""
-        if not answer or not answer.strip():
+        """Validation souple pour les champs texte"""
+        if not answer or not str(answer).strip():
             return False, None, "❌ Ce champ ne peut pas être vide."
-        return True, answer.strip(), None
+        return True, str(answer).strip(), None
     
     def _validate_enum_enhanced(self, question: AuditQuestion, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
-        """Validation pour les champs à valeurs énumérées (choix prédéfinis)"""
+        """Validation souple pour les champs à valeurs énumérées"""
         if not question.allowed_values:
-            return False, None, "❌ Valeurs autorisées non définies."
-        answer_clean = answer.strip().lower()
-        allowed = [v.lower() for v in question.allowed_values]
-        if answer_clean in allowed:
+            return True, answer, None  # On accepte tout si pas de valeurs définies
+        answer_clean = str(answer).strip().lower()
+        allowed = [str(v).lower() for v in question.allowed_values]
+        # On accepte si la réponse contient une valeur autorisée, même partiellement
+        if any(a in answer_clean for a in allowed):
             return True, answer_clean, None
         else:
             return False, None, f"❌ Réponse non reconnue. Valeurs possibles : {', '.join(question.allowed_values)}"
 
-
-    def validate_answer(self, question: AuditQuestion, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
-        """Validation intelligente avec contexte"""
-        answer = answer.strip()
-        
-        if not answer and question.required:
-            return False, None, "❌ Cette information est obligatoire."
-        
-        # Validation contextuelle d'abord
-        if question.context_dependent:
-            return IntelligentValidationUtils.contextual_validation(question, answer, self.data)
-        
-        # Validation standard améliorée
-        if question.validation_type == "number":
-            return self._validate_number_enhanced(question, answer)
-        elif question.validation_type == "date":
-            return self._validate_date_enhanced(answer)
-        elif question.validation_type == "boolean":
-            return self._validate_boolean_enhanced(answer)
-        elif question.validation_type == "materials":
-            return self._validate_materials_enhanced(answer)
-        elif question.validation_type in ["building_type", "building_usage"]:
-            return self._validate_enum_enhanced(question, answer)
-        else:
-            return self._validate_text_enhanced(answer)
-    
     def _validate_number_enhanced(self, question: AuditQuestion, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
+        """Validation souple pour les nombres"""
         try:
-            numbers = re.findall(r'\b\d+(?:[.,]\d+)?\b', answer)
+            # On accepte aussi les réponses du type 'environ 10', '10 personnes', etc.
+            numbers = re.findall(r'\d+(?:[.,]\d+)?', str(answer))
             if not numbers:
                 return False, None, "❌ Aucun nombre trouvé."
-            
             value = float(numbers[0].replace(',', '.'))
             if value.is_integer():
                 value = int(value)
-            
-            # Validation des limites avec conseils
+            # On ne bloque pas si hors limites, on prévient seulement
+            warning = None
             if question.min_value is not None and value < question.min_value:
-                advice = self._get_range_advice(question.key, value, "low")
-                return False, None, f"❌ Valeur trop faible (min: {question.min_value}). {advice}"
-            
+                warning = f"Valeur inférieure au minimum ({question.min_value})"
             if question.max_value is not None and value > question.max_value:
-                advice = self._get_range_advice(question.key, value, "high")
-                return False, None, f"❌ Valeur trop élevée (max: {question.max_value}). {advice}"
-            
-            # Génération de warnings intelligents
-            warning = self._generate_number_warning(question.key, value)
-            
+                warning = f"Valeur supérieure au maximum ({question.max_value})"
             return True, value, warning
-            
         except Exception as e:
             return False, None, f"❌ Format invalide: {str(e)}"
-    
-    def _get_range_advice(self, key: str, value: float, range_type: str) -> str:
-        """Conseils spécifiques selon la valeur et le contexte"""
-        advices = {
-            "buildingSize": {
-                "low": "Vérifiez l'unité (m² et non m).",
-                "high": "Pour les très grandes surfaces, prévoir compartimentage."
-            },
-            "maxOccupancy": {
-                "low": "Même faible, respectez les ratios équipements/personne.",
-                "high": "Calcul ERP requis. Consultez un expert."
-            },
-            "fireExtinguishers": {
-                "low": "Minimum légal obligatoire même pour petits espaces.",
-                "high": "Vérifiez la répartition et maintenance."
-            }
-        }
-        return advices.get(key, {}).get(range_type, "Vérifiez votre saisie.")
-    
-    def _generate_number_warning(self, key: str, value: float) -> Optional[str]:
-        """Génère des avertissements contextuels intelligents"""
-        warnings = {
-            "buildingSize": lambda v: "⚠️ Grande surface : pensez au compartimentage !" if v > 1000 else None,
-            "floorCount": lambda v: "⚠️ Bâtiment de grande hauteur : normes IGH possibles !" if v > 8 else None,
-            "maxOccupancy": lambda v: "⚠️ ERP potentiel : réglementation spécifique !" if v > 19 else None,
-            "fireExtinguishers": lambda v: "✅ Excellent équipement !" if v > 10 else None
-        }
-        
-        warning_func = warnings.get(key)
-        return warning_func(value) if warning_func else None
-    
+
+    def _validate_date_enhanced(self, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
+        """Validation souple pour les dates"""
+        try:
+            # On accepte plusieurs formats
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    date_obj = datetime.strptime(str(answer).strip(), fmt)
+                    return True, date_obj.strftime("%Y-%m-%d"), None
+                except:
+                    continue
+            return False, None, "❌ Format de date non reconnu. Exemple: 2024-03-15"
+        except Exception as e:
+            return False, None, f"❌ Erreur de date: {str(e)}"
+
+    def _validate_boolean_enhanced(self, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
+        """Validation souple pour les booléens"""
+        val = str(answer).strip().lower()
+        if val in ["oui", "yes", "vrai", "true", "présent", "present", "1"]:
+            return True, True, None
+        if val in ["non", "no", "faux", "false", "absent", "0"]:
+            return True, False, None
+        # On accepte aussi les réponses ambiguës
+        if "oui" in val or "yes" in val:
+            return True, True, None
+        if "non" in val or "no" in val:
+            return True, False, None
+        return False, None, "❌ Répondez par Oui/Non"
+
     def _validate_materials_enhanced(self, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
-        """Validation des matériaux avec analyse de risque"""
-        materials = self._extract_materials_smart(answer)
-        
+        """Validation souple pour les matériaux"""
+        # On accepte une liste, une chaîne séparée par virgules, etc.
+        if isinstance(answer, list):
+            materials = [str(a).strip().lower() for a in answer]
+        else:
+            materials = [m.strip().lower() for m in str(answer).replace(';', ',').split(',') if m.strip()]
         if not materials:
             return False, None, "❌ Aucun matériau reconnu."
-        
-        # Analyse des risques
-        risk_analysis = self._analyze_material_risks(materials)
-        warning = None
-        
-        if risk_analysis["high_risk_count"] > 0:
-            warning = f"🔥 {risk_analysis['high_risk_count']} matériau(x) à haut risque ! {risk_analysis['recommendations']}"
-        elif risk_analysis["medium_risk_count"] > 0:
-            warning = f"⚠️ {risk_analysis['medium_risk_count']} matériau(x) à risque modéré. {risk_analysis['recommendations']}"
-        else:
-            warning = "✅ Matériaux à faible risque incendie."
-        
-        return True, materials, warning
-    
-    def _extract_materials_smart(self, text: str) -> List[str]:
-        """Extraction intelligente des matériaux avec synonymes"""
-        materials_found = []
-        text_lower = text.lower()
-        
-        # Dictionnaire de synonymes
-        material_synonyms = {
-            "beton": ["béton", "beton", "ciment"],
-            "bois": ["bois", "boiserie", "charpente", "parquet"],
-            "metal": ["métal", "metal", "metallique", "tôle"],
-            "acier": ["acier", "steel", "inox"],
-            "brique": ["brique", "brique rouge", "terre cuite"],
-            "pierre": ["pierre", "granit", "marbre", "calcaire"],
-            "placo": ["placo", "plaque de plâtre", "cloison sèche"]
-        }
-        
-        for material, synonyms in material_synonyms.items():
-            if any(syn in text_lower for syn in synonyms):
-                materials_found.append(material)
-        
-        return list(set(materials_found))  # Supprime les doublons
-    
-    def _analyze_material_risks(self, materials: List[str]) -> Dict[str, Any]:
-        """Analyse avancée des risques matériaux"""
-        analysis = {
-            "high_risk_count": 0,
-            "medium_risk_count": 0,
-            "low_risk_count": 0,
-            "recommendations": "",
-            "fire_load": 0
-        }
-        
-        for material in materials:
-            rating = MATERIAL_FIRE_RATINGS.get(material, {"risk": RiskLevel.MEDIUM})
-            risk = rating["risk"]
-            
-            if risk in [RiskLevel.HIGH, RiskLevel.VERY_HIGH]:
-                analysis["high_risk_count"] += 1
-            elif risk == RiskLevel.MEDIUM:
-                analysis["medium_risk_count"] += 1
-            else:
-                analysis["low_risk_count"] += 1
-        
-        # Génération de recommandations
-        if analysis["high_risk_count"] > 0:
-            analysis["recommendations"] = "Traitement ignifuge recommandé, détection renforcée."
-        elif analysis["medium_risk_count"] > 0:
-            analysis["recommendations"] = "Surveillance accrue, plan évacuation adapté."
-        else:
-            analysis["recommendations"] = "Structure résistante au feu."
-        
-        return analysis
+        return True, materials, None
 
+    def validate_answer(self, question: AuditQuestion, answer: str) -> Tuple[bool, Optional[Any], Optional[str]]:
+        """Validation intelligente et souple selon le type de question"""
+        try:
+            if question.validation_type == "number":
+                return self._validate_number_enhanced(question, answer)
+            elif question.validation_type == "enum" or question.validation_type == "building_type" or question.validation_type == "building_usage":
+                return self._validate_enum_enhanced(question, answer)
+            elif question.validation_type == "date":
+                return self._validate_date_enhanced(answer)
+            elif question.validation_type == "boolean":
+                return self._validate_boolean_enhanced(answer)
+            elif question.validation_type == "materials":
+                return self._validate_materials_enhanced(answer)
+            else:
+                return self._validate_text_enhanced(answer)
+        except Exception as e:
+            return False, None, f"❌ Erreur de validation: {str(e)}"
+
+    # ...existing code...
 class FlameoChatbotEnhanced:
     def __init__(self):
         self.llm = ChatOpenAI(temperature=0.3, model="gpt-4o-mini")  # Température réduite pour plus de précision
