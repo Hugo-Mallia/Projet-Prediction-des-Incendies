@@ -1,15 +1,14 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request
-from fastapi.responses import JSONResponse
-from typing import List
-from app.models.risk_item import RiskItem
-from app.services.detection_service import detect_risks
+from fastapi import APIRouter, HTTPException
+from app.chatbot.flameo import FlameoChatbotEnhanced
 
 router = APIRouter()
+chatbot = FlameoChatbotEnhanced()
 
-@router.post("/scan-environment/", response_model=List[RiskItem])
-async def scan_environment(image: UploadFile = File(...)):
+@router.post("/scan")
+async def scan_environment(data: dict):
     try:
-        risks = detect_risks(image)
-        return risks
+        # Process the scanning data using the chatbot
+        response = chatbot.perform_intelligent_analysis(data)
+        return {"status": "success", "data": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,74 +1,75 @@
-from app.models.risk_item import AuditData, AuditResult
+from typing import Dict, Any, List
+from datetime import datetime
+from app.chatbot.audit_state import SmartAuditState
+from app.models.schemas import RiskAssessment, ContextualInsight
+from app.models.risk_item import RiskLevel
+import logging
 
-def evaluate_audit(data: dict) -> AuditResult:
-    try:
-        room_sizes = [float(size.strip()) for size in data["roomSizes"].split(",")]
-    except Exception:
-        room_sizes = []
+logger = logging.getLogger(__name__)
 
-    automated_data = {
-        "temperature": 25,
-        "smoke_level": 0.02,
-        "fire_extinguisher_status": "OK"
+class AuditService:
+    def __init__(self):
+        self.audit_state = SmartAuditState()
+
+    def export_audit_data(self) -> Dict[str, Any]:
+        """Exporte les données d'audit pour sauvegarde ou traitement"""
+        return {
+            "audit_data": self.audit_state.data,
+            "risk_indicators": self.audit_state.risk_indicators,
+            "contextual_insights": [
+                {
+                    "type": insight.insight_type,
+                    "message": insight.message,
+                    "urgency": insight.urgency.value,
+                    "norms": insight.related_norms
+                }
+                for insight in self.audit_state.contextual_insights
+            ],
+            "completion_status": self.audit_state.complete,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    def import_audit_data(self, data: Dict[str, Any]) -> bool:
+        """Importe des données d'audit précédemment sauvegardes"""
+        try:
+            self.audit_state.data = data.get("audit_data", {})
+            self.audit_state.risk_indicators = data.get("risk_indicators", [])
+            
+            # Reconstruction des insights
+            insights_data = data.get("contextual_insights", [])
+            self.audit_state.contextual_insights = []
+            
+            for insight_data in insights_data:
+                insight = ContextualInsight(
+                    insight_type=insight_data["type"],
+                    message=insight_data["message"],
+                    urgency=RiskLevel(insight_data["urgency"]),
+                    related_norms=insight_data.get("norms", [])
+                )
+                self.audit_state.contextual_insights.append(insight)
+            
+            self.audit_state.complete = data.get("completion_status", False)
+            
+            # Repositionnement dans les questions
+            answered_count = len([k for k in self.audit_state.data.keys() 
+                                if k in [q.key for q in self.questions]])
+            self.audit_state.current_idx = answered_count
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de l'import des données: {e}")
+            return False
+
+    def reset_audit(self):
+        """Réinitialise complètement l'audit"""
+        self.audit_state = SmartAuditState()
+
+def evaluate_audit(audit_data):
+    # Implémentation simple ou à adapter selon ton besoin
+    # Par exemple, retourne un score fictif
+    return {
+        "score": 0.8,
+        "details": "Audit évalué avec succès.",
+        "risks": [],
     }
-
-    status = "Conforme"
-    message = "Le bâtiment respecte les normes européennes."
-    recommendations = []
-
-    if data["fireExtinguishers"] < (data["buildingSize"] // 200):
-        status = "Non conforme"
-        message = "Nombre d'extincteurs insuffisant (1 extincteur requis pour 200 m²)."
-        recommendations.append("Ajoutez des extincteurs pour atteindre le ratio requis (1 extincteur pour 200 m²).")
-
-    if data["emergencyExits"] < 2:
-        status = "Non conforme"
-        message = "Nombre de sorties de secours insuffisant (minimum 2 requises)."
-        recommendations.append("Ajoutez au moins deux sorties de secours accessibles et bien signalées.")
-
-    if data["smokeDetectors"] < data["roomCount"]:
-        status = "Non conforme"
-        message = "Nombre de détecteurs de fumée insuffisant (1 détecteur requis par pièce)."
-        recommendations.append("Installez des détecteurs de fumée dans toutes les pièces.")
-
-    if any(size > 50 for size in room_sizes):
-        status = "Non conforme"
-        message = "Certaines pièces dépassent la taille maximale autorisée de 50 m²."
-        recommendations.append("Divisez les pièces dépassant 50 m² en espaces plus petits.")
-
-    if data["evacuationPlan"] == "non":
-        recommendations.append("Créez et affichez un plan d'évacuation clair et accessible.")
-
-    if data["trainingSessions"] < 2:
-        recommendations.append("Organisez au moins deux sessions de formation en sécurité incendie par an.")
-
-    if data["staffAwareness"] < 3:
-        recommendations.append("Sensibilisez davantage le personnel aux pratiques de sécurité incendie.")
-
-    recommendations.append("Effectuez des exercices d'évacuation réguliers pour améliorer la préparation.")
-    recommendations.append("Vérifiez régulièrement l'état des équipements de sécurité.")
-
-    audit_data = AuditData(
-        buildingName=data["buildingName"],
-        buildingType=data["buildingType"],
-        buildingUsage=data["buildingUsage"],
-        buildingSize=data["buildingSize"],
-        fireExtinguishers=data["fireExtinguishers"],
-        emergencyExits=data["emergencyExits"],
-        smokeDetectors=data["smokeDetectors"],
-        fireDrills=data["fireDrills"],
-        roomCount=data["roomCount"],
-        roomSizes=room_sizes,
-        constructionMaterials=data["constructionMaterials"],
-        evacuationPlan=data["evacuationPlan"],
-        trainingSessions=data["trainingSessions"],
-        staffAwareness=data["staffAwareness"],
-        automatedData=automated_data
-    )
-
-    return AuditResult(
-        status=status,
-        message=message,
-        recommendations=recommendations,
-        data=audit_data
-    )

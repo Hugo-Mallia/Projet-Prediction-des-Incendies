@@ -1,30 +1,23 @@
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
+from enum import Enum
+
+class RiskLevel(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 class RiskItem(BaseModel):
-    label: str
-    confidence: float
-    location: dict  # Contient les coordonnées de l'objet détecté
+    id: int
+    description: str
+    level: RiskLevel
+    related_norms: Optional[List[str]] = None
 
-class AuditData(BaseModel):
-    buildingName: str
-    buildingType: str
-    buildingUsage: str
-    buildingSize: int
-    fireExtinguishers: int
-    emergencyExits: int
-    smokeDetectors: int
-    fireDrills: str
-    roomCount: int
-    roomSizes: List[float]
-    constructionMaterials: str
-    evacuationPlan: str
-    trainingSessions: int
-    staffAwareness: int
-    automatedData: Optional[Dict[str, Any]] = None
-
-class AuditResult(BaseModel):
-    status: str
-    message: str
-    recommendations: List[str]
-    data: AuditData
+class RiskAssessment(BaseModel):
+    fire_risk: RiskLevel
+    structural_risk: RiskLevel
+    evacuation_risk: RiskLevel
+    equipment_adequacy: float
+    compliance_score: float
+    priority_actions: List[str]
